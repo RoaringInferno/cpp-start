@@ -11,14 +11,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
+list(REMOVE_ITEM SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
 file(GLOB_RECURSE HEADERS include/*.h include/*.hpp)
+file(GLOB_RECURSE TESTS tests/*.cpp)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-target_include_directories(${PROJECT_NAME}
+# Compile to a static library first
+set(LIBNAME lib_${PROJECT_NAME})
+add_library(${LIBNAME} STATIC ${SOURCES})
+target_include_directories(${LIBNAME}
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
+
+# Add main executable
+add_executable(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/main.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBNAME})
 
 set(CMAKE_CXX_WARN_DEPRECATED YES)
 set(CMAKE_CXX_WARN_UNINITIALIZED YES)
