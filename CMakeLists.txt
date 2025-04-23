@@ -58,7 +58,6 @@ foreach(TEST_FILE ${TESTS})
     # Link against required libraries
     target_link_libraries(${TEST_NAME} PRIVATE
         ${PROJECT_NAME}  # Link against main library
-        gtest_main      # Assuming Google Test framework
     )
 
     # Add test to CTest
@@ -73,3 +72,10 @@ foreach(TEST_FILE ${TESTS})
         BUILD_WITHOUT_DEPENDS ON
     )
 endforeach()
+
+set(CTEST_SOURCE_DIRECTORY ${CMAKE_SOURCE_DIR})
+set(CTEST_BINARY_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
+
+set(CTEST_TEST_TYPE "unit")
+set(CTEST_TEST_TIMEOUT 300)
