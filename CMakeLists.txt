@@ -10,16 +10,21 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-file(GLOB_RECURSE SOURCES src/*.cpp CONFIGURE_DEPENDS) # All source file in src/ will be added
-file(GLOB_RECURSE HEADERS include/*.h include/*.hpp CONFIGURE_DEPENDS) # All header files in include/ will be added
-file(GLOB TESTS tests/*.cpp) # Each source file in tests/ will be treated as a separate test. Any sources in subdirectories will be treated as test-common sources
-file(GLOB BENCHMARKS benchmarks/*.cpp) # Each source file in benchmarks/ will be treated as a separate benchmark. Any sources in subdirectories will be treated as benchmark-common sources
+set(SOURCE_DIR src)
+set(INCLUDE_DIR include)
+set(TEST_DIR tests)
+set(BENCHMARK_DIR benchmarks)
+
+file(GLOB_RECURSE SOURCES ${SOURCE_DIR}/*.cpp CONFIGURE_DEPENDS) # All source file in ${SOURCE_DIR}/ will be added
+file(GLOB_RECURSE HEADERS ${INCLUDE_DIR}/*.h ${INCLUDE_DIR}/*.hpp CONFIGURE_DEPENDS) # All header files in ${INCLUDE_DIR}/ will be added
+file(GLOB TESTS ${TEST_DIR}/*.cpp) # Each source file in ${TEST_DIR}/ will be treated as a separate test. Any sources in subdirectories will be treated as test-common sources
+file(GLOB BENCHMARKS ${BENCHMARK_DIR}/*.cpp) # Each source file in ${BENCHMARK_DIR}/ will be treated as a separate benchmark. Any sources in subdirectories will be treated as benchmark-common sources
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${INCLUDE_DIR}/${PROJECT_NAME}>
     PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
 
@@ -43,7 +48,7 @@ export(EXPORT ${PROJECT_NAME}-config
 )
 
 enable_testing()
-file(GLOB_RECURSE TEST_SOURCES tests/*.cpp CONFIGURE_DEPENDS)
+file(GLOB_RECURSE TEST_SOURCES ${TEST_DIR}/*.cpp CONFIGURE_DEPENDS)
 foreach(TEST_FILE ${TESTS})
     list(TEST_SOURCES REMOVE_ITEM ${TEST_FILE})
 endforeach()
@@ -71,7 +76,7 @@ set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
 set(CTEST_TEST_TYPE "unit")
 set(CTEST_TEST_TIMEOUT 300)
 
-file(GLOB_RECURSE BENCHMARK_SOURCES tests/*.cpp CONFIGURE_DEPENDS)
+file(GLOB_RECURSE BENCHMARK_SOURCES ${BENCHMARK_DIR}/*.cpp CONFIGURE_DEPENDS)
 foreach(BENCHMARK_FILE ${BENCHMARKS})
     list(BENCHMARK_SOURCES REMOVE_ITEM ${BENCHMARK_FILE})
 endforeach()
