@@ -77,3 +77,16 @@ set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
 
 set(CTEST_TEST_TYPE "unit")
 set(CTEST_TEST_TIMEOUT 300)
+
+foreach(BENCHMARK_FILE ${BENCHMARKS})
+    get_filename_component(BENCHMARK_NAME_RAW ${BENCHMARK_FILE} NAME_WE)
+    set(BENCHMARK_NAME ${PROJECT_NAME}_${BENCHMARK_NAME_RAW}_benchmark)
+    add_executable(${BENCHMARK_NAME} ${BENCHMARK_FILE})
+    target_link_libraries(${BENCHMARK_NAME} INTERFACE
+        ${PROJECT_NAME}
+    )
+    set_target_properties(${BENCHMARK_NAME} PROPERTIES
+        CXX_VISIBILITY_PRESET "default"
+        BUILD_WITHOUT_DEPENDS ON
+    )
+endforeach()
