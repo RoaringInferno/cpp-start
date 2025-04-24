@@ -10,21 +10,27 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-file(GLOB_RECURSE SOURCES src/*.cpp)
-list(REMOVE_ITEM SOURCES ${CMAKE_SOURCE_DIR}/src/main.cpp)
-file(GLOB_RECURSE HEADERS include/*.h include/*.hpp)
-file(GLOB_RECURSE TESTS tests/*.cpp)
+set(SOURCE_DIR src)
+set(INCLUDE_DIR include)
+set(TEST_DIR tests)
+set(BENCHMARK_DIR benchmarks)
+
+file(GLOB_RECURSE SOURCES ${SOURCE_DIR}/*.cpp CONFIGURE_DEPENDS)
+list(REMOVE_ITEM SOURCES ${CMAKE_SOURCE_DIR}/${SOURCE_DIR}/main.cpp)
+file(GLOB_RECURSE HEADERS include/*.h include/*.hpp CONFIGURE_DEPENDS)
+file(GLOB TESTS ${TEST_DIR}/*.cpp)
+file(GLOB BENCHMARKS ${BENCHMARK_DIR}/*.cpp)
 
 # Compile to a static library first
 set(LIBNAME lib_${PROJECT_NAME})
 add_library(${LIBNAME} STATIC ${SOURCES})
 target_include_directories(${LIBNAME}
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_DIR}>
 )
 
 # Add main executable
-add_executable(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src/main.cpp)
+add_executable(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/${SOURCE_DIR}/main.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBNAME})
 
 set(CMAKE_CXX_WARN_DEPRECATED YES)
@@ -36,21 +42,17 @@ set(CMAKE_CXX_WARN_UNUSED_FUNCTION YES)
 set(CMAKE_CXX_WARN_UNUSED_RESULT YES)
 
 enable_testing()
+file(GLOB_RECURSE TEST_SOURCES ${TEST_DIR}/*.cpp CONFIGURE_DEPENDS)
+foreach(TEST_FILE ${TESTS})
+    list(REMOVE_ITEM TEST_SOURCES ${TEST_FILE})
+endforeach()
 foreach(TEST_FILE ${TESTS})
     get_filename_component(TEST_NAME_RAW ${TEST_FILE} NAME_WE)
     set(TEST_NAME ${PROJECT_NAME}_${TEST_NAME_RAW}_test)
-    add_executable(${TEST_NAME} ${TEST_FILE})
-    target_link_libraries(${TEST_NAME} PRIVATE
-        ${LIBNAME}
-    )
-    add_test(
-        NAME ${TEST_NAME}
-        COMMAND ${TEST_NAME}
-    )
-    set_target_properties(${TEST_NAME} PROPERTIES
-        CXX_VISIBILITY_PRESET "default"
-        BUILD_WITHOUT_DEPENDS ON
-    )
+    add_executable(${TEST_NAME} ${TEST_FILE} ${TEST_SOURCES})
+    target_link_libraries(${TEST_NAME} PRIVATE ${LIBNAME})
+    add_test( NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    set_target_properties(${TEST_NAME} PROPERTIES CXX_VISIBILITY_PRESET "default" BUILD_WITHOUT_DEPENDS ON)
 endforeach()
 
 set(CTEST_SOURCE_DIRECTORY ${CMAKE_SOURCE_DIR})
@@ -60,15 +62,14 @@ set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
 set(CTEST_TEST_TYPE "unit")
 set(CTEST_TEST_TIMEOUT 300)
 
+file(GLOB_RECURSE BENCHMARK_SOURCES ${BENCHMARK_DIR}/*.cpp CONFIGURE_DEPENDS)
+foreach(BENCHMARK_FILE ${BENCHMARKS})
+    list(REMOVE_ITEM BENCHMARK_SOURCES ${BENCHMARK_FILE})
+endforeach()
 foreach(BENCHMARK_FILE ${BENCHMARKS})
     get_filename_component(BENCHMARK_NAME_RAW ${BENCHMARK_FILE} NAME_WE)
     set(BENCHMARK_NAME ${PROJECT_NAME}_${BENCHMARK_NAME_RAW}_benchmark)
-    add_executable(${BENCHMARK_NAME} ${BENCHMARK_FILE})
-    target_link_libraries(${BENCHMARK_NAME} PRIVATE
-        ${LIBNAME}
-    )
-    set_target_properties(${BENCHMARK_NAME} PROPERTIES
-        CXX_VISIBILITY_PRESET "default"
-        BUILD_WITHOUT_DEPENDS ON
-    )
+    add_executable(${BENCHMARK_NAME} ${BENCHMARK_FILE} ${BENCHMARK_SOURCES})
+    target_link_libraries(${BENCHMARK_NAME} PRIVATE ${LIBNAME})
+    set_target_properties(${BENCHMARK_NAME} PROPERTIES CXX_VISIBILITY_PRESET "default" BUILD_WITHOUT_DEPENDS ON)
 endforeach()
