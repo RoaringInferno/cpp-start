@@ -12,7 +12,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS include/*.h include/*.hpp)
-file(GLOB_RECURSE TESTS tests/*.cpp)
+file(GLOB TESTS tests/*.cpp)
+file(GLOB BENCHMARKS benchmarks/*.cpp)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
@@ -49,25 +50,16 @@ configure_package_config_file(
 
 enable_testing()
 foreach(TEST_FILE ${TESTS})
-    # Get filename without extension
     get_filename_component(TEST_NAME_RAW ${TEST_FILE} NAME_WE)
     set(TEST_NAME ${PROJECT_NAME}_${TEST_NAME_RAW}_test)
-
-    # Create test executable
     add_executable(${TEST_NAME} ${TEST_FILE})
-
-    # Link against required libraries
     target_link_libraries(${TEST_NAME} PRIVATE
-        ${PROJECT_NAME}  # Link against main library
+        ${PROJECT_NAME}
     )
-
-    # Add test to CTest
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${TEST_NAME}
     )
-
-    # Set test properties
     set_target_properties(${TEST_NAME} PROPERTIES
         CXX_VISIBILITY_PRESET "default"
         BUILD_WITHOUT_DEPENDS ON
@@ -80,3 +72,16 @@ set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
 
 set(CTEST_TEST_TYPE "unit")
 set(CTEST_TEST_TIMEOUT 300)
+
+foreach(BENCHMARK_FILE ${BENCHMARKS})
+    get_filename_component(BENCHMARK_NAME_RAW ${BENCHMARK_FILE} NAME_WE)
+    set(BENCHMARK_NAME ${PROJECT_NAME}_${BENCHMARK_NAME_RAW}_benchmark)
+    add_executable(${BENCHMARK_NAME} ${BENCHMARK_FILE})
+    target_link_libraries(${BENCHMARK_NAME} PRIVATE
+        ${PROJECT_NAME}
+    )
+    set_target_properties(${BENCHMARK_NAME} PROPERTIES
+        CXX_VISIBILITY_PRESET "default"
+        BUILD_WITHOUT_DEPENDS ON
+    )
+endforeach()
