@@ -10,10 +10,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-file(GLOB_RECURSE SOURCES src/*.cpp)
-file(GLOB_RECURSE HEADERS include/*.h include/*.hpp)
-file(GLOB TESTS tests/*.cpp)
-file(GLOB BENCHMARKS benchmarks/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp CONFIGURE_DEPENDS) # All source file in src/ will be added
+file(GLOB_RECURSE HEADERS include/*.h include/*.hpp CONFIGURE_DEPENDS) # All header files in include/ will be added
+file(GLOB TESTS tests/*.cpp) # Each source file in tests/ will be treated as a separate test. Any sources in subdirectories will be treated as test-common sources
+file(GLOB BENCHMARKS benchmarks/*.cpp) # Each source file in benchmarks/ will be treated as a separate benchmark. Any sources in subdirectories will be treated as benchmark-common sources
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
@@ -42,17 +42,15 @@ export(EXPORT ${PROJECT_NAME}-config
     NAMESPACE ${PROJECT_NAME}::
 )
 
-configure_package_config_file(
-    ${CMAKE_SOURCE_DIR}/cmake/${PROJECT_NAME}-config-install.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-
 enable_testing()
+file(GLOB_RECURSE TEST_SOURCES tests/*.cpp CONFIGURE_DEPENDS)
+foreach(TEST_FILE ${TESTS})
+    list(TEST_SOURCES REMOVE_ITEM ${TEST_FILE})
+endforeach()
 foreach(TEST_FILE ${TESTS})
     get_filename_component(TEST_NAME_RAW ${TEST_FILE} NAME_WE)
     set(TEST_NAME ${PROJECT_NAME}_${TEST_NAME_RAW}_test)
-    add_executable(${TEST_NAME} ${TEST_FILE})
+    add_executable(${TEST_NAME} ${TEST_FILE} ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME} PRIVATE
         ${PROJECT_NAME}
     )
@@ -73,10 +71,14 @@ set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
 set(CTEST_TEST_TYPE "unit")
 set(CTEST_TEST_TIMEOUT 300)
 
+file(GLOB_RECURSE BENCHMARK_SOURCES tests/*.cpp CONFIGURE_DEPENDS)
+foreach(BENCHMARK_FILE ${BENCHMARKS})
+    list(BENCHMARK_SOURCES REMOVE_ITEM ${BENCHMARK_FILE})
+endforeach()
 foreach(BENCHMARK_FILE ${BENCHMARKS})
     get_filename_component(BENCHMARK_NAME_RAW ${BENCHMARK_FILE} NAME_WE)
     set(BENCHMARK_NAME ${PROJECT_NAME}_${BENCHMARK_NAME_RAW}_benchmark)
-    add_executable(${BENCHMARK_NAME} ${BENCHMARK_FILE})
+    add_executable(${BENCHMARK_NAME} ${BENCHMARK_FILE} ${BENCHMARK_SOURCES})
     target_link_libraries(${BENCHMARK_NAME} PRIVATE
         ${PROJECT_NAME}
     )
